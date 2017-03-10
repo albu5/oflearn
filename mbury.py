@@ -14,6 +14,8 @@ im_ = (im.astype(np.float32)/255).tolist()
 im1 = io.imread('eval-data/Dumptruck/frame11.png')
 im1_ = (im1.astype(np.float32)/255).tolist()
 
+ofinit = tflearn.initializations.normal (shape=None, mean=0.0, stddev=0.02, dtype=tf.float32, seed=None)
+
 R = im[:,:,1]
 
 ITER = 100000
@@ -22,7 +24,7 @@ LR = 0.0001
 DECAY = 1000
 alpha = 1
 beta = 1
-gamma = 2
+gamma = 0
 
 W = im.shape[1]
 H = im.shape[0]
@@ -47,15 +49,18 @@ inp1 = tf.placeholder(dtype=tf.float32, shape=[H,W,3])
 inp2 = tf.placeholder(dtype=tf.float32, shape=[H,W,3])
 
 diff_im = inp2-inp1
-passive = (1-tf.reduce_mean(tf.square(diff_im), axis=2))
+passive = (1-tf.reduce_mean(tf.square(diff_im), axis=2))**100
 
 inp_nn = tf.expand_dims(axis=0,input=tf.concat(2,[inp1,inp2,diff_im]))
 
-conv1 = tflearn.conv_2d(inp_nn, 16, [4, 4], activation='relu', name='conv1')
-conv2 = tflearn.conv_2d(conv1, 16, [4, 4], activation='relu', name='conv2')
+conv1 = tflearn.conv_2d(inp_nn, 128, [4, 4], activation='relu', name='conv1')
+conv2 = tflearn.conv_2d(conv1, 128, [4, 4], activation='relu', name='conv2')
+conv3 = tflearn.conv_2d(conv2, 128, [4, 4], activation='relu', name='conv3')
+conv4 = tflearn.conv_2d(conv3, 128, [4, 4], activation='relu', name='conv4')
 
-Flowx = tf.squeeze(tflearn.conv_2d(conv2, 1, [4, 4], activation='linear', name='Flowx'))
-Flowy = tf.squeeze(tflearn.conv_2d(conv2, 1, [4, 4], activation='linear', name='Flowy'))
+
+Flowx = tf.squeeze(tflearn.conv_2d(conv4, 1, [4, 4], activation='linear', weights_init=ofinit, name='Flowx'))
+Flowy = tf.squeeze(tflearn.conv_2d(conv4, 1, [4, 4], activation='linear', weights_init=ofinit, name='Flowy'))
 
 im_nn_out = ofsampler(inp1, Flowx, Flowy, Xg, Yg)
 mse = tf.reduce_mean(tf.square((im_nn_out-inp2)))
@@ -105,15 +110,17 @@ for i in range(ITER):
 		out_image = im_nn_out.eval(feed_dict={inp1:im_, inp2:im1_})
 		out_image1 = np.squeeze(np.array(out_image))
 		plt.clf()
-		
-		if i%2==0:
-			plt.imshow(passive.eval(feed_dict={inp1:im_, inp2:im1_}),cmap='gray')
-
+			
 		outx = -np.squeeze(np.array(Flowx.eval(feed_dict={inp1:im_, inp2:im1_})))
 		outy = -np.squeeze(np.array(Flowy.eval(feed_dict={inp1:im_, inp2:im1_})))
 		
+		if i%2==0:
+			plt.imshow((np.array(passive.eval(feed_dict={inp1:im_, inp2:im1_}))**5),cmap='gray')
+			plt.quiver(Xgnp[::10, ::10],Ygnp[::10, ::10],outx[::10, ::10],outy[::10, ::10],pivot='mid', units='inches')
+
 		if i%2==1:
-			plt.quiver(Xgnp[::20, ::20],Ygnp[::20, ::20],outx[::20, ::20],outy[::20, ::20],pivot='mid', units='inches')
+			# plt.imshow(passive.eval(feed_dict={inp1:im_, inp2:im1_}),cmap='gray')
+			plt.quiver(Xgnp[::10, ::10],Ygnp[::10, ::10],outx[::10, ::10],outy[::10, ::10],pivot='mid', units='inches')
 		
 		plt.pause(0.0001)
 		print("step %d, training accuracy %g"%(i, train_accuracy))
