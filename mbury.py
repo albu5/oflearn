@@ -51,7 +51,7 @@ inp2 = tf.placeholder(dtype=tf.float32, shape=[H,W,3])
 diff_im = inp2-inp1
 passive = (1-tf.reduce_mean(tf.square(diff_im), axis=2))**100
 
-inp_nn = tf.expand_dims(axis=0,input=tf.concat(2,[inp1,inp2,diff_im]))
+inp_nn = tf.expand_dims(axis=0,input=tf.concat(axis=2,values=[inp1,inp2,diff_im]))
 
 conv1 = tflearn.conv_2d(inp_nn, 128, [4, 4], activation='relu', name='conv1')
 conv2 = tflearn.conv_2d(conv1, 128, [4, 4], activation='relu', name='conv2')

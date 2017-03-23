@@ -10,10 +10,10 @@ def imsampler_gray(I, C):
 	top_left = tf.cast(tf.floor(C), tf.int32)
 
 	top_right = tf.cast(
-	    tf.concat(1, [tf.floor(C[:, 0:1]), tf.ceil(C[:, 1:2])]), tf.int32)
+	    tf.concat(axis=1, values=[tf.floor(C[:, 0:1]), tf.ceil(C[:, 1:2])]), tf.int32)
 
 	bottom_left = tf.cast(
-	    tf.concat(1, [tf.ceil(C[:, 0:1]), tf.floor(C[:, 1:2])]), tf.int32)
+	    tf.concat(axis=1, values=[tf.ceil(C[:, 0:1]), tf.floor(C[:, 1:2])]), tf.int32)
 
 	bottom_right = tf.cast(tf.ceil(C), tf.int32)
 
